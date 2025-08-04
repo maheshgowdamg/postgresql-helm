@@ -1,0 +1,63 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: postgresql
+  namespace: dev
+spec:
+  interval: 10m0s
+  chart:
+    spec:
+      chart: postgresql
+      version: 15.5.23
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: flux-system
+  values:
+    architecture: replication
+    replication:
+      enabled: true
+      synchronousCommit: "on"
+      numSynchronousReplicas: 1
+    metrics:
+      enabled: true
+    global:
+      storageClass: hostpath
+      postgresql:
+        auth:
+          database: postgres
+          existingSecret: postgresql
+    primary:
+      persistence:
+        size: 4Gi
+      resourcesPreset: medium
+      extendedConfiguration: |
+        max_connections = 3001
+        shared_preload_libraries = 'pg_stat_statements'
+        pg_stat_statements.track = all
+        log_destination = 'stderr'
+        logging_collector = on
+        log_directory = '/bitnami/postgresql/logs'
+        log_filename = 'postgresql.log'
+        log_connections = off
+        log_disconnections = off
+        log_min_duration_statement = 1000
+        log_statement = 'all'
+    readReplicas:
+      replicaCount: 2
+      persistence:
+        size: 4Gi
+      resourcesPreset: xlarge
+      extendedConfiguration: |
+        max_connections = 3001
+        shared_preload_libraries = 'pg_stat_statements'
+        pg_stat_statements.track = all
+        log_destination = 'stderr'
+        logging_collector = on
+        log_directory = '/bitnami/postgresql/logs'
+        log_filename = 'postgresql.log'
+        log_connections = off
+        log_disconnections = off
+        log_min_duration_statement = 1000
+        log_statement = 'all'
+
